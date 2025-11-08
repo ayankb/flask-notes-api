@@ -30,5 +30,22 @@ class Notes(db.Model):
 #     db.create_all()
 
 
+@app.route('/notes', methods=['GET'])
+def get_notes():
+    notes = db.session.execute(db.select(Notes)).scalars()
+    data = [note.to_dict() for note in notes]
+    return jsonify(data), 200
+
+
+@app.route('/notes/<int:id>', methods=['GET'])
+def get_note_by_id(id):
+    note = db.session.execute(db.select(Notes).where(Notes.id == id)).scalar()
+    if not note:
+        return jsonify({'error': 'Note not found.'}), 404
+
+    return jsonify(note.to_dict()), 200
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
