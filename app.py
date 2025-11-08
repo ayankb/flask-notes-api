@@ -46,6 +46,22 @@ def get_note_by_id(id):
     return jsonify(note.to_dict()), 200
 
 
+@app.route('/notes', methods=['POST'])
+def create_notes():
+    data = request.get_json()
+    # print(data)
+    if not data or 'title' not in data or 'content' not in data:
+        return jsonify({'Error': 'Invalid data'}), 404
+
+    new_note = Notes(
+        title=data['title'],
+        content=data['content']
+    )
+    db.session.add(new_note)
+    db.session.commit()
+
+    return jsonify(new_note.to_dict()), 201
+
 
 if __name__ == '__main__':
     app.run(debug=True)
