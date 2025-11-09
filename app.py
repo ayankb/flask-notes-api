@@ -63,5 +63,33 @@ def create_notes():
     return jsonify(new_note.to_dict()), 201
 
 
+@app.route('/notes/<int:id>', methods=['PUT'])
+def update_note(id):
+    note = db.session.execute(db.select(Notes).where(Notes.id == id)).scalar()
+    if not note:
+        return jsonify({'error': 'Note not found.'}), 404
+
+    data = request.get_json()
+    new_title = data['title']
+    new_content = data['content']
+    # print(new_content, new_title)
+    note.title = new_title
+    note.content = new_content
+    db.session.commit()
+
+    return jsonify(note.to_dict()), 200
+
+
+@app.route('/notes/<int:id>', methods=['DELETE'])
+def delete_note(id):
+    note = db.session.execute(db.select(Notes).where(Notes.id == id)).scalar()
+    if not note:
+        return jsonify({'error': 'Note not found.'}), 404
+
+    db.session.delete(note)
+    db.session.commit()
+    return jsonify({'message': 'Note deleted'}), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True)
