@@ -48,36 +48,56 @@ def get_note_by_id(id):
 
 @app.route('/notes', methods=['POST'])
 def create_notes():
-    data = request.get_json()
-    # print(data)
-    if not data or 'title' not in data or 'content' not in data:
-        return jsonify({'Error': 'Invalid data'}), 404
+    try:
+        data = request.get_json()
+        # print(data)
+        if not data or 'title' not in data or 'content' not in data:
+            return jsonify({'Error': 'Invalid data'}), 404
 
-    new_note = Notes(
-        title=data['title'],
-        content=data['content']
-    )
-    db.session.add(new_note)
-    db.session.commit()
+        new_note = Notes(
+            title=data['title'],
+            content=data['content']
+        )
+        db.session.add(new_note)
+        db.session.commit()
 
-    return jsonify(new_note.to_dict()), 201
+        return jsonify(new_note.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Server error.',
+                        'details': str(e)
+                        }), 500
 
 
 @app.route('/notes/<int:id>', methods=['PUT'])
 def update_note(id):
-    note = db.session.execute(db.select(Notes).where(Notes.id == id)).scalar()
-    if not note:
-        return jsonify({'error': 'Note not found.'}), 404
+    try:
+        note = db.session.execute(db.select(Notes).where(Notes.id == id)).scalar()
+        if not note:
+            return jsonify({'error': 'Note not found.'}), 404
 
-    data = request.get_json()
-    new_title = data['title']
-    new_content = data['content']
-    # print(new_content, new_title)
-    note.title = new_title
-    note.content = new_content
-    db.session.commit()
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid JSON data'}), 404
 
-    return jsonify(note.to_dict()), 200
+        new_title = data.get('title')
+        new_content = data.get('content')
+        if not new_title or not new_content:
+            return jsonify({'error': 'Title and content are required'}), 404
+
+        note.title = new_title
+        note.content = new_content
+        db.session.commit()
+
+        return jsonify({
+            'message': 'note update successfully.',
+            'note': note.to_dict()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Server error.',
+                        'details': str(e)}), 500
 
 
 @app.route('/notes/<int:id>', methods=['DELETE'])
@@ -88,7 +108,7 @@ def delete_note(id):
 
     db.session.delete(note)
     db.session.commit()
-    return jsonify({'message': 'Note deleted'}), 200
+    return jsonify({'message': 'Note deleted successfully'}), 200
 
 
 if __name__ == '__main__':
